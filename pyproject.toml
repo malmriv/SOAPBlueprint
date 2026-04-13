@@ -1,17 +1,16 @@
-[project]
+[tool.poetry]
 name = "wsdlgen"
 version = "0.1.0"
 description = "WSDL generator for SAP Integration Suite"
-requires-python = ">=3.11"
-dependencies = [
-    "lxml",
-    "streamlit",
-]
+package-mode = false
 
-[project.optional-dependencies]
-dev = [
-    "pytest",
-]
+[tool.poetry.dependencies]
+python = ">=3.11"
+lxml = "*"
+streamlit = "*"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
