@@ -1,6 +1,8 @@
 # SOAP Blueprint
 
-This tool allows API devs to build WSDL files to define your SOAP service schema. Validated for SAP services (ECC, S/4HANA, Integration Suite) as well as MuleSoft.
+[This tool](https://soapblueprint.streamlit.app) allows API devs to build WSDL files to define your SOAP service schema. Validated for SAP services (ECC, S/4HANA, Integration Suite) as well as MuleSoft.
+
+![A screenshot of the app](https://github.com/malmriv/malmriv.github.io/blob/master/_posts/images/soapblueprint-view-tool.png?raw=true)
 
 Features:
 
