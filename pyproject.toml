@@ -1,0 +1,18 @@
+[project]
+name = "wsdlgen"
+version = "0.1.0"
+description = "WSDL generator for SAP Integration Suite"
+requires-python = ">=3.11"
+dependencies = [
+    "lxml",
+    "streamlit",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
