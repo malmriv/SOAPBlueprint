@@ -10,6 +10,7 @@ Features:
 - Generate WSDL as well as standalone XSD automatically.
 - Generate a valid SOAP request body that fits your schema.
 - Generate a Postman collection that contains your request, adequate POST method & adequate Content-Type header.
+- Load files from previous sessions to continue working on them.
 
 ## Why
 
@@ -43,20 +44,22 @@ Some things I am quite happy about:
 - Test suite covering flat fields, nested fields, deep nesting (3+ levels), arrays (unbounded), and input validation.
 - The Streamlit server does not shut down automatically after a few minutes of continued use. (The fact that Shiny's free plan server does wind down after a few minutes drove me nuts, because it meant starting over).
 
+## Changelog
+- Apr 16, 2026. A drag-and-drop section is added. WSDLs generated in previous sessions can be loaded & parsed automatically.
+- Apr 13, 2026. First fully functional & validated version uploaded.
+
 ## Structure
 
-```
-core/
-  models.py        Field and ServiceConfig dataclasses
-  builder.py       Field tree to WSDL (lxml)
-  validators.py    XML name and type validation
-app/
-  streamlit_app.py UI
-tests/
-  test_builder.py
-graphics/         Blobs used in the UI
-  header-image.png
-```
+| Directory | File | Purpose |                                                                                        
+  |---|---|---|                                                                 
+  | `core/` | `models.py` | `Field` and `ServiceConfig` dataclasses |                                                   
+  | | `builder.py` | Field tree → WSDL (uses lxml) |                                                                    
+  | | `parser.py` | WSDL → field tree (for re-importing) |                                                              
+  | | `validators.py` | XML name and type validation |                                                                  
+  | `app/` | `streamlit_app.py` | UI |                                                                                  
+  | `tests/` | `test_builder.py` | Builder tests |                                                                      
+  | | `test_parser.py` | Parser tests |                                                                                 
+  | `graphics/` | `header-image.png` | Logo used in the UI |
 
 ## Running locally
 
