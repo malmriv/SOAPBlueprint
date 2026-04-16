@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import uuid
 import sys
@@ -16,6 +18,7 @@ from core.builder import (
     generate_sample_message,
     generate_postman_collection,
 )
+from core.parser import parse_wsdl, ParseError
 from core.validators import (
     validate_field,
     validate_service_name,
@@ -89,6 +92,21 @@ def _nodes_to_fields(nodes):
     ]
 
 
+def _fields_to_nodes(fields):
+    """Convert Field objects (from parser) into UI tree nodes with fresh UUIDs."""
+    return [
+        {
+            "uid": str(uuid.uuid4()),
+            "name": f.name,
+            "type": f.type,
+            "min_occurs": f.min_occurs,
+            "max_occurs": f.max_occurs,
+            "children": _fields_to_nodes(f.children),
+        }
+        for f in fields
+    ]
+
+
 def _flatten(nodes, depth=0):
     """Yield (node, depth) in display order (pre-order traversal)."""
     for node in nodes:
@@ -112,10 +130,53 @@ def _init_state():
         "sample_response": None,
         "postman_collection": None,
         "show_sample": None,
+        "svc_name": "MyWebService",
+        "ns_base": "http://example.com",
+        "req_el": "ZRequest",
+        "resp_el": "ZResponse",
+        "last_imported_wsdl": None,
+        "import_status": None,
     }
     for key, val in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = val
+
+
+def _on_wsdl_uploaded():
+    """Callback fired when the WSDL uploader receives a file.
+
+    Runs at the start of the rerun, before any widget is instantiated,
+    so it is safe to mutate session_state for widgets that render above it.
+    """
+    uploaded = st.session_state.get("wsdl_uploader")
+    if uploaded is None:
+        st.session_state.import_status = None
+        return
+    fingerprint = (uploaded.name, uploaded.size)
+    if st.session_state.last_imported_wsdl == fingerprint:
+        return
+    try:
+        config, req_fields, resp_fields = parse_wsdl(uploaded.getvalue())
+    except ParseError as e:
+        st.session_state.import_status = ("error", str(e))
+        return
+
+    st.session_state.svc_name = config.service_name
+    st.session_state.ns_base = config.namespace_base
+    st.session_state.req_el = config.request_element
+    st.session_state.resp_el = config.response_element
+    st.session_state.request_tree = _fields_to_nodes(req_fields)
+    st.session_state.response_tree = _fields_to_nodes(resp_fields)
+    st.session_state.editing_uid = None
+    st.session_state.editing_tree = None
+    st.session_state.generated_wsdl = None
+    st.session_state.generated_xsd = None
+    st.session_state.sample_request = None
+    st.session_state.sample_response = None
+    st.session_state.postman_collection = None
+    st.session_state.show_sample = None
+    st.session_state.last_imported_wsdl = fingerprint
+    st.session_state.import_status = ("success", uploaded.name)
 
 
 def _reset_edit_keys(tree_key, uid, node):
@@ -282,19 +343,27 @@ def main():
 
     with st.sidebar:
         st.header("Service")
-        service_name = st.text_input(
-            "Service name", value="MyWebService", key="svc_name"
-        )
-        namespace_base = st.text_input(
-            "Namespace base", value="http://example.com", key="ns_base"
-        )
+        service_name = st.text_input("Service name", key="svc_name")
+        namespace_base = st.text_input("Namespace base", key="ns_base")
         st.subheader("Operation elements")
-        request_element = st.text_input(
-            "Request element", value="ZRequest", key="req_el"
+        request_element = st.text_input("Request element", key="req_el")
+        response_element = st.text_input("Response element", key="resp_el")
+
+        st.divider()
+        st.file_uploader(
+            "Already have a WSDL from a previous session? Drag it here",
+            type=["wsdl", "xml"],
+            key="wsdl_uploader",
+            on_change=_on_wsdl_uploaded,
+            help="Only WSDLs produced by SOAP Blueprint are guaranteed to parse.",
         )
-        response_element = st.text_input(
-            "Response element", value="ZResponse", key="resp_el"
-        )
+        status = st.session_state.import_status
+        if status:
+            kind, msg = status
+            if kind == "error":
+                st.error(f"Could not parse WSDL: {msg}")
+            else:
+                st.success(f"Loaded {msg}")
 
     tab_req, tab_resp = st.tabs(["Request", "Response"])
     with tab_req:
